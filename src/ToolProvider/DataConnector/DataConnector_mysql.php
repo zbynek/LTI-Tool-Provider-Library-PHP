@@ -61,9 +61,9 @@ class DataConnector_mysql extends DataConnector
                            "WHERE consumer_key256 = %s",
                            DataConnector::quoted($key256));
         }
-        $rsConsumer = mysql_query($sql);
+        $rsConsumer = $this->sql_query($sql);
         if ($rsConsumer) {
-            while ($row = mysql_fetch_object($rsConsumer)) {
+            while ($row = $this->sql_fetch_object($rsConsumer)) {
                 if (empty($key256) || empty($row->consumer_key) || ($consumer->getKey() === $row->consumer_key)) {
                     $consumer->setRecordId(intval($row->consumer_pk));
                     $consumer->name = $row->name;
@@ -100,7 +100,7 @@ class DataConnector_mysql extends DataConnector
                     break;
                 }
             }
-            mysql_free_result($rsConsumer);
+            $this->sql_free_result($rsConsumer);
         }
 
         return $ok;
@@ -168,10 +168,10 @@ class DataConnector_mysql extends DataConnector
                            DataConnector::quoted($from), DataConnector::quoted($until), DataConnector::quoted($last),
                            DataConnector::quoted($now), $consumer->getRecordId());
         }
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
         if ($ok) {
             if (empty($id)) {
-                $consumer->setRecordId(mysql_insert_id());
+                $consumer->setRecordId($this->sql_insert_id());
                 $consumer->created = $time;
             }
             $consumer->updated = $time;
@@ -194,7 +194,7 @@ class DataConnector_mysql extends DataConnector
 // Delete any nonce values for this consumer
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . DataConnector::NONCE_TABLE_NAME . ' WHERE consumer_pk = %d',
                        $consumer->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete any outstanding share keys for resource links for this consumer
         $sql = sprintf('DELETE sk ' .
@@ -202,7 +202,7 @@ class DataConnector_mysql extends DataConnector
                        "INNER JOIN {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' rl ON sk.resource_link_pk = rl.resource_link_pk ' .
                        'WHERE rl.consumer_pk = %d',
                        $consumer->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete any outstanding share keys for resource links for contexts in this consumer
         $sql = sprintf('DELETE sk ' .
@@ -211,7 +211,7 @@ class DataConnector_mysql extends DataConnector
                        "INNER JOIN {$this->dbTableNamePrefix}" . DataConnector::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
                        'WHERE c.consumer_pk = %d',
                        $consumer->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete any users in resource links for this consumer
         $sql = sprintf('DELETE u ' .
@@ -219,7 +219,7 @@ class DataConnector_mysql extends DataConnector
                        "INNER JOIN {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' rl ON u.resource_link_pk = rl.resource_link_pk ' .
                        'WHERE rl.consumer_pk = %d',
                        $consumer->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete any users in resource links for contexts in this consumer
         $sql = sprintf('DELETE u ' .
@@ -228,7 +228,7 @@ class DataConnector_mysql extends DataConnector
                        "INNER JOIN {$this->dbTableNamePrefix}" . DataConnector::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
                        'WHERE c.consumer_pk = %d',
                        $consumer->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Update any resource links for which this consumer is acting as a primary resource link
         $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' prl ' .
@@ -236,7 +236,7 @@ class DataConnector_mysql extends DataConnector
                        'SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL ' .
                        'WHERE rl.consumer_pk = %d',
                        $consumer->getRecordId());
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
 // Update any resource links for contexts in which this consumer is acting as a primary resource link
         $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' prl ' .
@@ -245,14 +245,14 @@ class DataConnector_mysql extends DataConnector
                        'SET prl.primary_resource_link_pk = NULL, prl.share_approved = NULL ' .
                        'WHERE c.consumer_pk = %d',
                        $consumer->getRecordId());
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
 // Delete any resource links for this consumer
         $sql = sprintf('DELETE rl ' .
                        "FROM {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' rl ' .
                        'WHERE rl.consumer_pk = %d',
                        $consumer->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete any resource links for contexts in this consumer
         $sql = sprintf('DELETE rl ' .
@@ -260,21 +260,21 @@ class DataConnector_mysql extends DataConnector
                        "INNER JOIN {$this->dbTableNamePrefix}" . DataConnector::CONTEXT_TABLE_NAME . ' c ON rl.context_pk = c.context_pk ' .
                        'WHERE c.consumer_pk = %d',
                        $consumer->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete any contexts for this consumer
         $sql = sprintf('DELETE c ' .
                        "FROM {$this->dbTableNamePrefix}" . DataConnector::CONTEXT_TABLE_NAME . ' c ' .
                        'WHERE c.consumer_pk = %d',
                        $consumer->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete consumer
         $sql = sprintf('DELETE c ' .
                        "FROM {$this->dbTableNamePrefix}" . DataConnector::CONSUMER_TABLE_NAME . ' c ' .
                        'WHERE c.consumer_pk = %d',
                        $consumer->getRecordId());
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
         if ($ok) {
             $consumer->initialize();
@@ -297,9 +297,9 @@ class DataConnector_mysql extends DataConnector
                'protected, enabled, enable_from, enable_until, last_access, created, updated ' .
                "FROM {$this->dbTableNamePrefix}" . DataConnector::CONSUMER_TABLE_NAME . ' ' .
                'ORDER BY name';
-        $rsConsumers = mysql_query($sql);
+        $rsConsumers = $this->sql_query($sql);
         if ($rsConsumers) {
-            while ($row = mysql_fetch_object($rsConsumers)) {
+            while ($row = $this->sql_fetch_object($rsConsumers)) {
                 $consumer = new ToolProvider\ToolConsumer($row->consumer_key, $this);
                 $consumer->setRecordId(intval($row->consumer_pk));
                 $consumer->name = $row->name;
@@ -333,7 +333,7 @@ class DataConnector_mysql extends DataConnector
                 $consumer->updated = strtotime($row->updated);
                 $consumers[] = $consumer;
             }
-            mysql_free_result($rsConsumers);
+            $this->sql_free_result($rsConsumers);
         }
 
         return $consumers;
@@ -400,9 +400,9 @@ class DataConnector_mysql extends DataConnector
                            'WHERE (consumer_pk = %d) AND (lti_context_id = %s)',
                            $context->getConsumer()->getRecordId(), DataConnector::quoted($context->ltiContextId));
         }
-        $rs_context = mysql_query($sql);
+        $rs_context = $this->sql_query($sql);
         if ($rs_context) {
-            $row = mysql_fetch_object($rs_context);
+            $row = $this->sql_fetch_object($rs_context);
             if ($row) {
                 $context->setRecordId(intval($row->context_pk));
                 $context->setConsumerId(intval($row->consumer_pk));
@@ -452,10 +452,10 @@ class DataConnector_mysql extends DataConnector
                DataConnector::quoted($context->ltiContextId), DataConnector::quoted($settingsValue),
                DataConnector::quoted($now), $consumer_pk, $id);
         }
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
         if ($ok) {
             if (empty($id)) {
-                $context->setRecordId(mysql_insert_id());
+                $context->setRecordId($this->sql_insert_id());
                 $context->created = $time;
             }
             $context->updated = $time;
@@ -481,7 +481,7 @@ class DataConnector_mysql extends DataConnector
                        "INNER JOIN {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' rl ON sk.resource_link_pk = rl.resource_link_pk ' .
                        'WHERE rl.context_pk = %d',
                        $context->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete any users in resource links for this context
         $sql = sprintf('DELETE u ' .
@@ -489,7 +489,7 @@ class DataConnector_mysql extends DataConnector
                        "INNER JOIN {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' rl ON u.resource_link_pk = rl.resource_link_pk ' .
                        'WHERE rl.context_pk = %d',
                        $context->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Update any resource links for which this consumer is acting as a primary resource link
         $sql = sprintf("UPDATE {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' prl ' .
@@ -497,21 +497,21 @@ class DataConnector_mysql extends DataConnector
                        'SET prl.primary_resource_link_pk = null, prl.share_approved = null ' .
                        'WHERE rl.context_pk = %d',
                        $context->getRecordId());
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
 // Delete any resource links for this consumer
         $sql = sprintf('DELETE rl ' .
                        "FROM {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' rl ' .
                        'WHERE rl.context_pk = %d',
                        $context->getRecordId());
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Delete context
         $sql = sprintf('DELETE c ' .
                        "FROM {$this->dbTableNamePrefix}" . DataConnector::CONTEXT_TABLE_NAME . ' c ',
                        'WHERE c.context_pk = %d',
                        $context->getRecordId());
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
         if ($ok) {
             $context->initialize();
         }
@@ -552,9 +552,9 @@ class DataConnector_mysql extends DataConnector
                            ' WHERE ((r.consumer_pk = %d) OR (c.consumer_pk = %d)) AND (lti_resource_link_id = %s)',
                            $resourceLink->getConsumer()->getRecordId(), $resourceLink->getConsumer()->getRecordId(), DataConnector::quoted($resourceLink->getId()));
         }
-        $rsContext = mysql_query($sql);
+        $rsContext = $this->sql_query($sql);
         if ($rsContext) {
-            $row = mysql_fetch_object($rsContext);
+            $row = $this->sql_fetch_object($rsContext);
             if ($row) {
                 $resourceLink->setRecordId(intval($row->resource_link_pk));
                 if (!is_null($row->context_pk)) {
@@ -648,10 +648,10 @@ class DataConnector_mysql extends DataConnector
                            DataConnector::quoted($settingsValue), $primaryResourceLinkId, $approved, DataConnector::quoted($now),
                            $consumerId, $id);
         }
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
         if ($ok) {
             if (empty($id)) {
-                $resourceLink->setRecordId(mysql_insert_id());
+                $resourceLink->setRecordId($this->sql_insert_id());
                 $resourceLink->created = $time;
             }
             $resourceLink->updated = $time;
@@ -675,14 +675,14 @@ class DataConnector_mysql extends DataConnector
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
                        'WHERE (resource_link_pk = %d)',
                        $resourceLink->getRecordId());
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
 // Delete users
         if ($ok) {
             $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . DataConnector::USER_RESULT_TABLE_NAME . ' ' .
                            'WHERE (resource_link_pk = %d)',
                            $resourceLink->getRecordId());
-            $ok = mysql_query($sql);
+            $ok = $this->sql_query($sql);
         }
 
 // Update any resource links for which this is the primary resource link
@@ -691,7 +691,7 @@ class DataConnector_mysql extends DataConnector
                            'SET primary_resource_link_pk = NULL ' .
                            'WHERE (primary_resource_link_pk = %d)',
                            $resourceLink->getRecordId());
-            $ok = mysql_query($sql);
+            $ok = $this->sql_query($sql);
         }
 
 // Delete resource link
@@ -699,7 +699,7 @@ class DataConnector_mysql extends DataConnector
             $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_TABLE_NAME . ' ' .
                            'WHERE (resource_link_pk = %s)',
                            $resourceLink->getRecordId());
-            $ok = mysql_query($sql);
+            $ok = $this->sql_query($sql);
         }
 
         if ($ok) {
@@ -743,9 +743,9 @@ class DataConnector_mysql extends DataConnector
                            '((rl.primary_resource_link_pk = %d) AND (share_approved = 1))',
                            $resourceLink->getRecordId(), $resourceLink->getRecordId());
         }
-        $rsUser = mysql_query($sql);
+        $rsUser = $this->sql_query($sql);
         if ($rsUser) {
-            while ($row = mysql_fetch_object($rsUser)) {
+            while ($row = $this->sql_fetch_object($rsUser)) {
                 $user = ToolProvider\User::fromResourceLink($resourceLink, $row->lti_user_id);
                 $user->setRecordId(intval($row->user_pk));
                 $user->ltiResultSourcedId = $row->lti_result_sourcedid;
@@ -780,9 +780,9 @@ class DataConnector_mysql extends DataConnector
                        'WHERE (primary_resource_link_pk = %d) ' .
                        'ORDER BY consumer_pk',
                        $resourceLink->getRecordId());
-        $rsShare = mysql_query($sql);
+        $rsShare = $this->sql_query($sql);
         if ($rsShare) {
-            while ($row = mysql_fetch_object($rsShare)) {
+            while ($row = $this->sql_fetch_object($rsShare)) {
                 $share = new ToolProvider\ResourceLinkShare();
                 $share->resourceLinkId = intval($row->resource_link_pk);
                 $share->approved = (intval($row->share_approved) === 1);
@@ -814,14 +814,14 @@ class DataConnector_mysql extends DataConnector
 // Delete any expired nonce values
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . DataConnector::NONCE_TABLE_NAME . " WHERE expires <= '{$now}'";
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Load the nonce
         $sql = sprintf("SELECT value AS T FROM {$this->dbTableNamePrefix}" . DataConnector::NONCE_TABLE_NAME . ' WHERE (consumer_pk = %d) AND (value = %s)',
                        $nonce->getConsumer()->getRecordId(), DataConnector::quoted($nonce->getValue()));
-        $rs_nonce = mysql_query($sql);
+        $rs_nonce = $this->sql_query($sql);
         if ($rs_nonce) {
-            $row = mysql_fetch_object($rs_nonce);
+            $row = $this->sql_fetch_object($rs_nonce);
             if ($row === false) {
                 $ok = false;
             }
@@ -845,7 +845,7 @@ class DataConnector_mysql extends DataConnector
         $sql = sprintf("INSERT INTO {$this->dbTableNamePrefix}" . DataConnector::NONCE_TABLE_NAME . " (consumer_pk, value, expires) VALUES (%d, %s, %s)",
                        $nonce->getConsumer()->getRecordId(), DataConnector::quoted($nonce->getValue()),
                        DataConnector::quoted($expires));
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
         return $ok;
 
@@ -871,16 +871,16 @@ class DataConnector_mysql extends DataConnector
 // Clear expired share keys
         $now = date("{$this->dateFormat} {$this->timeFormat}", time());
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . " WHERE expires <= '{$now}'";
-        mysql_query($sql);
+        $this->sql_query($sql);
 
 // Load share key
-        $id = mysql_real_escape_string($shareKey->getId());
+        $id = $this->sql_real_escape_string($shareKey->getId());
         $sql = 'SELECT resource_link_pk, auto_approve, expires ' .
                "FROM {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . ' ' .
                "WHERE share_key_id = '{$id}'";
-        $rsShareKey = mysql_query($sql);
+        $rsShareKey = $this->sql_query($sql);
         if ($rsShareKey) {
-            $row = mysql_fetch_object($rsShareKey);
+            $row = $this->sql_fetch_object($rsShareKey);
             if ($row && (intval($row->resource_link_pk) === $shareKey->resourceLinkId)) {
                 $shareKey->autoApprove = (intval($row->auto_approve) === 1);
                 $shareKey->expires = strtotime($row->expires);
@@ -912,7 +912,7 @@ class DataConnector_mysql extends DataConnector
                        '(share_key_id, resource_link_pk, auto_approve, expires) ' .
                        "VALUES (%s, %d, {$approve}, '{$expires}')",
                        DataConnector::quoted($shareKey->getId()), $shareKey->resourceLinkId);
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
         return $ok;
 
@@ -930,7 +930,7 @@ class DataConnector_mysql extends DataConnector
 
         $sql = "DELETE FROM {$this->dbTableNamePrefix}" . DataConnector::RESOURCE_LINK_SHARE_KEY_TABLE_NAME . " WHERE share_key_id = '{$shareKey->getId()}'";
 
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
         if ($ok) {
             $shareKey->initialize();
@@ -968,9 +968,9 @@ class DataConnector_mysql extends DataConnector
                            $user->getResourceLink()->getRecordId(),
                            DataConnector::quoted($user->getId(ToolProvider\ToolProvider::ID_SCOPE_ID_ONLY)));
         }
-        $rsUser = mysql_query($sql);
+        $rsUser = $this->sql_query($sql);
         if ($rsUser) {
-            $row = mysql_fetch_object($rsUser);
+            $row = $this->sql_fetch_object($rsUser);
             if ($row) {
                 $user->setRecordId(intval($row->user_pk));
                 $user->setResourceLinkId(intval($row->resource_link_pk));
@@ -1013,10 +1013,10 @@ class DataConnector_mysql extends DataConnector
                            DataConnector::quoted($now),
                            $user->getRecordId());
         }
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
         if ($ok) {
             if (is_null($user->created)) {
-                $user->setRecordId(mysql_insert_id());
+                $user->setRecordId($this->sql_insert_id());
                 $user->created = $time;
             }
             $user->updated = $time;
@@ -1039,7 +1039,7 @@ class DataConnector_mysql extends DataConnector
         $sql = sprintf("DELETE FROM {$this->dbTableNamePrefix}" . DataConnector::USER_RESULT_TABLE_NAME . ' ' .
                        'WHERE (user_pk = %d)',
                        $user->getRecordId());
-        $ok = mysql_query($sql);
+        $ok = $this->sql_query($sql);
 
         if ($ok) {
             $user->initialize();
@@ -1047,6 +1047,26 @@ class DataConnector_mysql extends DataConnector
 
         return $ok;
 
+    }
+    
+    function sql_query($query){
+        return mysql_query($query);
+    }
+
+    function sql_insert_id(){
+        return mysql_insert_id();
+    }
+
+    function sql_fetch_object($resource){
+        return mysql_fetch_object($resource);
+    }
+
+    function sql_free_result($resource){
+        return mysql_free_result($resource);
+    }
+
+    function sql_real_escape_string($str){
+        return mysql_real_escape_string($str);
     }
 
 }
